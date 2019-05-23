@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 const fs = require('fs-extra'); //文件系统
+const path = require('path');
 const program = require('commander'); //终端输入处理框架
 const package = require('./package.json'); //获取版本信息
 const chalk = require('chalk');
 const inquirer = require('inquirer');
 const {menuFileName} = require('./util');
-const download = require('download-git-repo');
 const handlebars = require('handlebars');
 
 const pathTip = '菜单配置文件路径，默认为';
@@ -14,6 +14,9 @@ const distTip = '生成路径，默认为';
 const defaultPath = './menu.json';
 const defaultBase = '/';
 const defaultDist = './src';
+
+const templatePath = path.resolve(process.cwd(), 'node_modules', package.name, 'template/page');
+console.log(templatePath);
 
 const createFileByConfig = async (config) => {
   fs.pathExists(config.path, (err) => {
@@ -45,7 +48,7 @@ const makeFileByMenus = (config, menus = []) => {
         fs.ensureDir(`${config.dist}/container/${fileName}`, (err) => {
           if (err) console.log(chalk.red(`生成${fileName}文件夹失败`));
           else {
-            fs.copy('/node_modules/create-react-hooks-src/template/page', `${config.dist}/container/${fileName}`, err => {
+            fs.copy(templatePath, `${config.dist}/container/${fileName}`, err => {
               if (err) return console.log(chalk.red(`${fileName} 生成内部文件失败`));
               console.log(chalk.green(`生成${fileName}文件夹成功`));
             })
@@ -54,7 +57,6 @@ const makeFileByMenus = (config, menus = []) => {
       })
     }
   })
-  
 }
 
 program
