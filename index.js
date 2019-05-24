@@ -15,49 +15,79 @@ const defaultPath = './menu.json';
 const defaultBase = '/';
 const defaultDist = './src';
 
-const templatePath = path.resolve(process.cwd(), 'node_modules', package.name, 'template/page');
-console.log(templatePath);
+const templatePath = path.resolve(process.cwd(), 'node_modules', package.name, 'template');
+let config = {};
+let menus = [];
 
-const createFileByConfig = async (config) => {
-  fs.pathExists(config.path, (err) => {
-    if (err) {
-      console.log(chalk.red(`${config.path} ${err.code === 'ENOENT' ? '不存在' : '无法访问'}`));
-    } else {
-      console.log(chalk.blue('读取菜单配置文件...'));
-      fs.readJson(config.path, (err, data) => {
-        if (err) {
-          console.log(chalk.red('读取菜单配置文件失败'));
-        } else {
-          const menu = data.menu || []
-          console.log(menu);
-          makeFileByMenus(config, menu);
-        }
-      });
-    }
-  });
-}
-
-const makeFileByMenus = (config, menus = []) => {
+const genContainer = async () => {
   console.log(chalk.blue('开始生成container...'));
-  fs.ensureDir(`${config.dist}/container`, {recursive: true}, (err) => {
-    if (err) console.log(chalk.red(`生成发生container错误：${JSON.stringify(err)}`));
-    else {
-      menus.forEach(menu => {
-        const fileName = menuFileName(menu.code);
-        console.log(chalk.blue(`开始生成${fileName}文件夹...`));
-        fs.ensureDir(`${config.dist}/container/${fileName}`, (err) => {
-          if (err) console.log(chalk.red(`生成${fileName}文件夹失败`));
-          else {
-            fs.copy(templatePath, `${config.dist}/container/${fileName}`, err => {
-              if (err) return console.log(chalk.red(`${fileName} 生成内部文件失败`));
-              console.log(chalk.green(`生成${fileName}文件夹成功`));
-            })
-          }
-        })
-      })
-    }
-  })
+  try{
+    await fs.ensureDir(`${config.dist}/container`, {recursive: true});
+    menus.forEach(async menu => {
+      const fileName = menuFileName(menu.code);
+      await fs.ensureDir(`${config.dist}/container/${fileName}`);
+      await fs.copy(`${templatePath}/page`, `${config.dist}/container/${fileName}`);
+    })
+    console.log(chalk.green('生成container成功'));
+  } catch(err) {
+    console.log(chalk.red(`生成container错误：${JSON.stringify(err)}`));
+  }
 }
+
+const genHooks = async () => {
+  console.log(chalk.blue('开始生成hooks...'));
+  try{
+    await fs.ensureDir(`${config.dist}/hooks`, {recursive: true});
+    await fs.copy(`${templatePath}/hooks`, `${config.dist}/hooks`);
+    console.log(chalk.green('生成hooks文件夹成功'));
+  } catch (err) {
+    console.log(chalk.red(`生成hooks文件夹失败: ${JSON.stringify(err)}`))
+  }
+}
+
+const genService = async () => {
+  console.log(chalk.blue('开始生成Service...'));
+  try{
+    await fs.ensureDir(`${config.dist}/service`, {recursive: true});
+    await fs.copy(`${templatePath}/service/api.js`, `${config.dist}/service/api.js`);
+    menus.forEach(async menu =>  {
+      const name = menuFileName(menu.code);
+      const serviceContent = await fs.readFile(`${templatePath}/service/temp.js`);
+      const temp = handlebars.compile(serviceContent.toString())({serviceName: `${name}Service`});
+      await fs.writeFile(`${config.dist}/service/${menu.code}.js`, temp);
+    })
+    console.log(chalk.green('生成Service完成'));
+  } catch (err) {
+    console.log(chalk.red(`生成Service失败: ${JSON.stringify(err)}`))
+  }
+}
+
+const genStore = async () => {
+  console.log(chalk.blue('开始生成store...'));
+  try{
+    await fs.ensureDir(`${config.dist}/store`, {recursive: true});
+    await fs.copy(`${templatePath}/store`, `${config.dist}/store`);
+    console.log(chalk.green('生成store文件夹成功'));
+  } catch (err) {
+    console.log(chalk.red(`生成store文件夹失败: ${JSON.stringify(err)}`))
+  }
+}
+
+const getMenus = async (path) => {
+  console.log(chalk.blue('读取菜单配置文件...'));
+  const exist = await fs.pathExists(path);
+  if (exist) {
+    try {
+      const data = await fs.readJson(path);
+      return data.menu || [];
+    } catch(err) {
+      console.log(chalk.red('读取菜单配置文件失败'));
+    }
+  } else {
+    console.log(chalk.red(`${config.path} 不存在}`));
+  }
+} 
+
 
 program
   .version(package.version, '-v,--version')
@@ -78,10 +108,13 @@ program
       promps.push({type: 'input', name: 'dist', message: baseTip, default: defaultDist});
     }
 
-    inquirer.prompt(promps).then((answers) => {
-      const config = Object.assign({base, path}, answers);
-      console.log(chalk.green(`配置：${JSON.stringify(config)}`));
-      createFileByConfig(config);
+    inquirer.prompt(promps).then(async (answers) => {
+      config = Object.assign({base, path}, answers);
+      menus = await getMenus(config.path);
+      await genHooks();
+      await genStore();
+      await genService();
+      await genContainer();
     });
   })
 

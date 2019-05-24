@@ -24,7 +24,6 @@
     "handlebars": "^4.1.2",
     "inquirer": "^6.3.1"
   },
-  "dependencies": {},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/camiler/create-react-hooks-src.git"
