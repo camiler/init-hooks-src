@@ -24,24 +24,12 @@ const genContainer = async () => {
   try{
     await fs.ensureDir(`${config.dist}/container`, {recursive: true});
     menus.forEach(async menu => {
-      const fileName = menuFileName(menu.code);
-      await fs.ensureDir(`${config.dist}/container/${fileName}`);
-      await fs.copy(`${templatePath}/page`, `${config.dist}/container/${fileName}`);
+      await fs.ensureDir(`${config.dist}/container/${menu.name}`);
+      await fs.copy(`${templatePath}/page`, `${config.dist}/container/${menu.name}`);
     })
     console.log(chalk.green('生成container成功'));
   } catch(err) {
     console.log(chalk.red(`生成container错误：${JSON.stringify(err)}`));
-  }
-}
-
-const genHooks = async () => {
-  console.log(chalk.blue('开始生成hooks...'));
-  try{
-    await fs.ensureDir(`${config.dist}/hooks`, {recursive: true});
-    await fs.copy(`${templatePath}/hooks`, `${config.dist}/hooks`);
-    console.log(chalk.green('生成hooks文件夹成功'));
-  } catch (err) {
-    console.log(chalk.red(`生成hooks文件夹失败: ${JSON.stringify(err)}`))
   }
 }
 
@@ -51,25 +39,13 @@ const genService = async () => {
     await fs.ensureDir(`${config.dist}/service`, {recursive: true});
     await fs.copy(`${templatePath}/service/api.js`, `${config.dist}/service/api.js`);
     menus.forEach(async menu =>  {
-      const name = menuFileName(menu.code);
       const serviceContent = await fs.readFile(`${templatePath}/service/temp.js`);
-      const temp = handlebars.compile(serviceContent.toString())({serviceName: `${name}Service`});
+      const temp = handlebars.compile(serviceContent.toString())({serviceName: `${menu.name}Service`});
       await fs.writeFile(`${config.dist}/service/${menu.code}.js`, temp);
     })
     console.log(chalk.green('生成Service完成'));
   } catch (err) {
     console.log(chalk.red(`生成Service失败: ${JSON.stringify(err)}`))
-  }
-}
-
-const genStore = async () => {
-  console.log(chalk.blue('开始生成store...'));
-  try{
-    await fs.ensureDir(`${config.dist}/store`, {recursive: true});
-    await fs.copy(`${templatePath}/store`, `${config.dist}/store`);
-    console.log(chalk.green('生成store文件夹成功'));
-  } catch (err) {
-    console.log(chalk.red(`生成store文件夹失败: ${JSON.stringify(err)}`))
   }
 }
 
@@ -79,6 +55,10 @@ const getMenus = async (path) => {
   if (exist) {
     try {
       const data = await fs.readJson(path);
+      data.menu.map(item => {
+        item.name = menuFileName(item.code);
+        return item;
+      })
       return data.menu || [];
     } catch(err) {
       console.log(chalk.red('读取菜单配置文件失败'));
@@ -87,6 +67,34 @@ const getMenus = async (path) => {
     console.log(chalk.red(`${config.path} 不存在}`));
   }
 } 
+
+const genStatic = async () => {
+  try{
+    console.log(chalk.blue('开始生成其他静态文件...'));
+    await fs.ensureDir(`${config.dist}/store`, {recursive: true});
+    await fs.ensureDir(`${config.dist}/hooks`, {recursive: true});
+    await fs.copy(`${templatePath}/static`, `${config.dist}/`);
+    console.log(chalk.green('生成其他静态文件成功'));
+  } catch (err) {
+    console.log(chalk.red(`生成其他静态文件失败: ${JSON.stringify(err)}`))
+  }
+}
+
+const genRoutes = async () => {
+  console.log(chalk.blue('生成路由文件...'));
+  const menuNames = [];
+  menus.forEach(item => {
+    menuNames.push(item.name);
+  });
+  try{
+    const content = await fs.readFile(`${templatePath}/routes.js`);
+    const routes = handlebars.compile(content.toString())({menuNames});
+    await fs.writeFile(`${config.dist}/routes.js`, routes);
+    console.log(chalk.green('生成路由文件完成'));
+  }catch(err) {
+    console.log(chalk.red(`生成路由文件失败: ${JSON.stringify(err)}`))
+  }
+}
 
 
 program
@@ -111,10 +119,11 @@ program
     inquirer.prompt(promps).then(async (answers) => {
       config = Object.assign({base, path}, answers);
       menus = await getMenus(config.path);
-      await genHooks();
-      await genStore();
-      await genService();
       await genContainer();
+      await genService();
+      await genRoutes();
+      await genStatic();
+      console.log(chalk.green('react hooks src 完成！enjoy your code!'));
     });
   })
 
