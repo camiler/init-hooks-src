@@ -1,13 +1,13 @@
 {
-  "name": "create-react-hooks-src",
+  "name": "init-hooks-src",
   "version": "1.0.0",
   "description": "create react src template files with hooks version",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest --watch"
   },
   "bin": {
-    "create-react-hooks-src": "./index.js"
+    "init-hooks-src": "./index.js"
   },
   "keywords": [
     "react",
@@ -26,10 +26,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/camiler/create-react-hooks-src.git"
+    "url": "git+https://github.com/camiler/init-hooks-src.git"
   },
   "bugs": {
-    "url": "https://github.com/camiler/create-react-hooks-src/issues"
+    "url": "https://github.com/camiler/init-hooks-src/issues"
   },
-  "homepage": "https://github.com/camiler/create-react-hooks-src#readme"
+  "homepage": "https://github.com/camiler/init-hooks-src#readme"
 }

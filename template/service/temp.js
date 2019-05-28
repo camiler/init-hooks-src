@@ -1,8 +1,9 @@
 import ApiEnums from './api';
+import axios from 'axios';
 
 class {{serviceName}} {
   async getList(data = {}) {
-    const res = await fetch(ApiEnums.getList, {
+    const res = await axios.request(ApiEnums.getList, {
       body: data,
       method: 'POST',
     });
@@ -10,7 +11,7 @@ class {{serviceName}} {
   }
 
   async addItem(data = {}) {
-    const res = await fetch(ApiEnums.addItem, {
+    const res = await axios.request(ApiEnums.addItem, {
       body: data,
       method: 'POST',
     });
@@ -18,7 +19,7 @@ class {{serviceName}} {
   }
 
   async updateItem(data = {}) {
-    const res = await fetch(ApiEnums.updateItem, {
+    const res = await axios.request(ApiEnums.updateItem, {
       body: data,
       method: 'PUT',
     });
@@ -26,14 +27,14 @@ class {{serviceName}} {
   }
 
   async deleteItem(id) {
-    const res = await fetch(`${ApiEnums.deleteItem}/${id}`, {
+    const res = await axios.request(`${ApiEnums.deleteItem}/${id}`, {
       method: 'DELETE'
     });
     return res;
   }
 
   async getDetail(id) {
-    const res = await fetch(`${ApiEnums.getDetail}/${id}`, {
+    const res = await axios.request(`${ApiEnums.getDetail}/${id}`, {
       method: 'GET'
     });
     return res;

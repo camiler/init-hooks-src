@@ -9,7 +9,7 @@ export default () => {
   return (
     <Switch>
       {{#each menuNames}}
-      <Route path="/{{this}}" key="/{{this}}" component={ {{this}} } exact />
+      <Route path="/{{this}}" key="{{this}}" component={ {{this}} } exact />
       {{/each}}
     </Switch>
   )
