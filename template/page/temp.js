@@ -1,7 +1,8 @@
 import React, { useContext, useState, useEffect } from 'react';
+import Service from '../../service/{{serviceName}}'
 
-export default (props) => {
-  
+const {{containerName}} = (props) => {
+
   const fetchInit = () => {
 
   }
@@ -16,3 +17,5 @@ export default (props) => {
     </div>
   );
 }
+
+export default {{containerName}};

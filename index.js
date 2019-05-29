@@ -8,8 +8,8 @@ const inquirer = require('inquirer');
 const {menuFileName} = require('./util');
 const handlebars = require('handlebars');
 
-const pathTip = '菜单配置文件路径，默认为';
-const distTip = '生成路径，默认为';
+const pathTip = 'menu configuration file path, default is: ';
+const distTip = 'src dist dir, default is: ';
 const defaultPath = './menu.json';
 const defaultDist = './src';
 
@@ -18,22 +18,25 @@ let config = {};
 let menus = [];
 
 const genContainer = async () => {
-  console.log(chalk.blue('开始生成container...'));
+  console.log(chalk.blue('start to create container...'));
   try{
     await fs.ensureDir(`${config.dist}/container`, {recursive: true});
     menus.forEach(async menu => {
       const name = menuFileName(menu);
       await fs.ensureDir(`${config.dist}/container/${name}`);
-      await fs.copy(`${templatePath}/page`, `${config.dist}/container/${name}`);
+      const tempContent = await fs.readFile(`${templatePath}/page/temp.js`);
+      const temp = handlebars.compile(tempContent.toString())({serviceName: menu, containerName: name})
+      await fs.writeFile(`${config.dist}/container/${name}/index.js`, temp);
+      await fs.copy(`${templatePath}/page/enum.js`, `${config.dist}/container/${name}/enum.js`);
     })
-    console.log(chalk.green('生成container成功'));
+    console.log(chalk.green('create container success'));
   } catch(err) {
-    console.log(chalk.red(`生成container错误：${JSON.stringify(err)}`));
+    console.log(chalk.red(`create container error：${JSON.stringify(err)}`));
   }
 }
 
 const genService = async () => {
-  console.log(chalk.blue('开始生成Service...'));
+  console.log(chalk.blue('start to create service...'));
   try{
     await fs.ensureDir(`${config.dist}/service`, {recursive: true});
     await fs.copy(`${templatePath}/service/api.js`, `${config.dist}/service/api.js`);
@@ -42,59 +45,59 @@ const genService = async () => {
       const temp = handlebars.compile(serviceContent.toString())({serviceName: `${menuFileName(menu)}Service`});
       await fs.writeFile(`${config.dist}/service/${menu}.js`, temp);
     })
-    console.log(chalk.green('生成Service完成'));
+    console.log(chalk.green('create service success'));
   } catch (err) {
-    console.log(chalk.red(`生成Service失败: ${JSON.stringify(err)}`))
+    console.log(chalk.red(`create service error: ${JSON.stringify(err)}`))
   }
 }
 
 const getMenus = async (path) => {
-  console.log(chalk.blue('读取菜单配置文件...'));
+  console.log(chalk.blue(`reading menu configuration file:  ${path}...`));
   const exist = await fs.pathExists(path);
   if (exist) {
     try {
       const data = await fs.readJson(path);
       return data.menu || [];
     } catch(err) {
-      console.log(chalk.red('读取菜单配置文件失败'));
+      console.log(chalk.red('reading menu configuration file fail'));
       return false;
     }
   } else {
-    console.log(chalk.red(`${config.path} 不存在`));
+    console.log(chalk.red(`${config.path} is not exist`));
     return false;
   }
 } 
 
 const genStatic = async () => {
   try{
-    console.log(chalk.blue('开始生成其他静态文件...'));
+    console.log(chalk.blue('start to create other static files...'));
     await fs.ensureDir(`${config.dist}/store`, {recursive: true});
     await fs.ensureDir(`${config.dist}/hooks`, {recursive: true});
     await fs.copy(`${templatePath}/static`, `${config.dist}/`);
-    console.log(chalk.green('生成其他静态文件成功'));
+    console.log(chalk.green('create other static files success'));
   } catch (err) {
-    console.log(chalk.red(`生成其他静态文件失败: ${JSON.stringify(err)}`))
+    console.log(chalk.red(`create other static files error: ${JSON.stringify(err)}`))
   }
 }
 
 const genRoutes = async () => {
-  console.log(chalk.blue('生成路由文件...'));
+  console.log(chalk.blue('start to create route.js...'));
   try{
     const menuNames = [];
     menus.forEach(menu => menuNames.push(menuFileName(menu)));
     const content = await fs.readFile(`${templatePath}/routes.js`);
     const routes = handlebars.compile(content.toString())({menuNames});
     await fs.writeFile(`${config.dist}/routes.js`, routes);
-    console.log(chalk.green('生成路由文件完成'));
+    console.log(chalk.green('create route.js success'));
   }catch(err) {
-    console.log(chalk.red(`生成路由文件失败: ${JSON.stringify(err)}`))
+    console.log(chalk.red(`create route.js error: ${JSON.stringify(err)}`))
   }
 }
 
 
 program
   .version(package.version, '-v,--version')
-  .description('根据菜单配置快速创建react hooks版本的src文件')
+  .description('Create src folder in react hooks app quickly according to a simple menu configuration.')
   .option('-p,--path <path>', `${pathTip} ${defaultPath}`)
   .option('-d,--dist <dist>', `${distTip} ${defaultDist}`)
   .action(option => {
@@ -115,7 +118,7 @@ program
         await genService();
         await genRoutes();
         await genStatic();
-        console.log(chalk.green('react hooks src 完成！enjoy your code!'));
+        console.log(chalk.green('react hooks src finish！enjoy your code!'));
       }
     });
   })
